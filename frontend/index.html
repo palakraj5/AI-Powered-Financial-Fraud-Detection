@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Financial Fraud Detection</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background: white;
+            padding: 40px;
+            border-radius: 18px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        h1 {
+            text-align: center;
+            color: #111827;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+
+        .upload-section {
+            padding: 25px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            text-align: center;
+            background: #f8fafc;
+        }
+
+        input[type="file"] {
+            margin: 15px 0;
+            font-size: 15px;
+        }
+
+        .detect-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .detect-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .detect-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 30px;
+        }
+
+        .result-dashboard {
+            text-align: center;
+        }
+
+        .success-title {
+            color: #166534;
+            margin-bottom: 25px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .card {
+            padding: 25px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h3 {
+            margin: 0 0 12px;
+            font-size: 15px;
+            color: #374151;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .total-card {
+            background: #eff6ff;
+        }
+
+        .total-card p {
+            color: #2563eb;
+        }
+
+        .fraud-card {
+            background: #fef2f2;
+        }
+
+        .fraud-card p {
+            color: #dc2626;
+        }
+
+        .normal-card {
+            background: #f0fdf4;
+        }
+
+        .normal-card p {
+            color: #16a34a;
+        }
+
+        .download-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 14px 25px;
+            background: #16a34a;
+            color: white;
+            text-decoration: none;
+            border-radius: 9px;
+            font-weight: bold;
+        }
+
+        .download-btn:hover {
+            background: #15803d;
+        }
+
+        .error {
+            padding: 18px;
+            border-radius: 10px;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            text-align: center;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                padding: 25px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>AI Financial Fraud Detection</h1>
+
+        <p class="subtitle">
+            Upload a transaction CSV file to detect fraudulent transactions.
+        </p>
+
+        <div class="upload-section">
+
+            <form id="fraudForm">
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    name="file"
+                    accept=".csv"
+                    required
+                >
+
+                <button
+                    type="submit"
+                    class="detect-btn"
+                    id="detectButton"
+                >
+                    Detect Fraud
+                </button>
+
+            </form>
+
+        </div>
+
+        <div id="result"></div>
+
+    </div>
+
+
+    <script>
+
+        const form = document.getElementById("fraudForm");
+        const fileInput = document.getElementById("fileInput");
+        const result = document.getElementById("result");
+        const detectButton = document.getElementById("detectButton");
+
+
+        form.addEventListener("submit", async function(event) {
+
+            event.preventDefault();
+
+            const file = fileInput.files[0];
+
+            if (!file) {
+                result.innerHTML = `
+                    <div class="error">
+                        ❌ Please select a CSV file.
+                    </div>
+                `;
+                return;
+            }
+
+
+            if (!file.name.toLowerCase().endsWith(".csv")) {
+                result.innerHTML = `
+                    <div class="error">
+                        ❌ Please upload a CSV file.
+                    </div>
+                `;
+                return;
+            }
+
+
+            const formData = new FormData();
+
+            formData.append("file", file);
+
+
+            detectButton.disabled = true;
+            detectButton.textContent = "Processing...";
+
+
+            result.innerHTML = `
+                <div class="loading">
+                    ⏳ Analyzing transactions... Please wait.
+                </div>
+            `;
+
+
+            try {
+
+                const response = await fetch(
+                    "http://127.0.0.1:5000/predict",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+
+                const data = await response.json();
+
+
+                if (!response.ok) {
+
+                    result.innerHTML = `
+                        <div class="error">
+                            ❌ ${data.error || "An error occurred while processing the file."}
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                if (data.message) {
+
+                    result.innerHTML = `
+
+                        <div class="result-dashboard">
+
+                            <h2 class="success-title">
+                                ✅ Fraud Detection Completed
+                            </h2>
+
+
+                            <div class="stats">
+
+                                <div class="card total-card">
+                                    <h3>Total Transactions</h3>
+                                    <p>
+                                        ${Number(data.total_transactions).toLocaleString()}
+                                    </p>
+                                </div>
+
+
+                                <div class="card fraud-card">
+                                    <h3>Fraud Transactions</h3>
+                                    <p>
+                                        ${Number(data.fraud_transactions).toLocaleString()}
+                                    </p>
+                                </div>
+
+
+                                <div class="card normal-card">
+                                    <h3>Normal Transactions</h3>
+                                    <p>
+                                        ${Number(data.normal_transactions).toLocaleString()}
+                                    </p>
+                                </div>
+
+                            </div>
+
+
+                            <a
+                                class="download-btn"
+                                href="http://127.0.0.1:5000/download/${encodeURIComponent(data.result_file)}"
+                                target="_blank"
+                            >
+                                ⬇️ Download Fraud Results
+                            </a>
+
+                        </div>
+                    `;
+
+                } else {
+
+                    result.innerHTML = `
+                        <div class="error">
+                            ❌ ${data.error || "Something went wrong."}
+                        </div>
+                    `;
+                }
+
+
+            } catch (error) {
+
+                result.innerHTML = `
+
+                    <div class="error">
+
+                        <strong>
+                            ❌ Error connecting to the fraud detection API.
+                        </strong>
+
+                        <br><br>
+
+                        ${error}
+
+                        <br><br>
+
+                        Make sure the Flask backend is running on
+                        <strong>127.0.0.1:5000</strong>.
+
+                    </div>
+
+                `;
+
+            } finally {
+
+                detectButton.disabled = false;
+                detectButton.textContent = "Detect Fraud";
+
+            }
+
+        });
+
+    </script>
+
+</body>
+</html>

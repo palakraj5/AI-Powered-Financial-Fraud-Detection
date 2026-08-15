@@ -1,0 +1,20 @@
+# Python
+_pycache_/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Generated files
+Backend/tmp/
+fraud_results_*.csv
+
+# Dataset
+creditcard.csv
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
